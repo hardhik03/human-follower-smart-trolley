@@ -1,0 +1,62 @@
+For Latitude and Longitude:
+if(sscanf(msg, "GPRMC,%f,%c,%f,%c,%f,%c,%f,%d", &time,&m, &latitude, &ns, &longitude, &ew,&speed, &lock) >= 1)
+{  
+ { 
+   if(!lock) 
+   { 
+    longitude = 0.0; 
+    latitude = 0.0;         
+    return 0; 
+    }
+    else
+    { 
+      sscanf(msg,"GPGGA,%f,%f,%c,%f,%c,%d,%d,%*f,%d", &time, &latitude1, &ns, &longitude1, &ew, &fq, &nst, &tst, &altitude); 
+      if(ns == 'S') {    latitude  *= -1.0; } 
+      if(ew == 'W') {    longitude *= -1.0; } 
+      float degrees = trunc(latitude / 100.0f); 
+      float minutes = latitude - (degrees * 100.0f); 
+      latitude = degrees + minutes / 60.0f;     
+      degrees = trunc(longitude / 100.0f); //* 0.01f); 
+      minutes = longitude - (degrees * 100.0f); 
+      longitude = degrees + minutes / 60.0f; 
+      float a=gps.spd*1.85;         //converting speed in to kmph
+      // connect to internet
+      NetworkInterface* network = easy_connect(true); 
+      if (!network) { 
+       return -1; 
+   }
+   //to connect to adafruit
+   const char* hostname = "io.adafruit.com"; 
+   int port = 1883; 
+   logMessage("Connecting to %s:%d\r\n", hostname, port); 
+   int rc = mqttNetwork.connect(hostname, port); 
+   if (rc != 0) 
+       logMessage("rc from TCP connect is %d\r\n", rc);
+  //to create dashboard
+  data.clientID.cstring = "username/feed/name/csv"; 
+   data.username.cstring = "username"; 
+   data.password.cstring = "AIO key"; 
+   if ((rc = client.connect(data)) != 0) 
+     logMessage("rc from MQTT connect is %d\r\n", rc);
+  //using MQTT protocol
+  //publishing latitude, longitude and altitude 
+  char buf[200]; 
+   sprintf(buf, "%f,%f,%f,%d",a,b,c,d); 
+   message.qos = MQTT::QOS0; 
+   message.retained = false; 
+   message.dup = false; 
+   message.payload = (void*)buf; 
+   message.payloadlen = strlen(buf)+1; 
+   rc = client.publish(topic, message); 
+   output.printf("rc=%d",rc); 
+    
+ //Publishing speed     
+   sprintf(buf,"%f",a); 
+   message.qos = MQTT::QOS0; 
+   message.retained = false; 
+   message.dup = false; 
+   message.payload = (void*)buf; 
+   message.payloadlen = strlen(buf)+1; 
+   rc = client.publish(topic1, message); 
+   output.printf("rc=%d",rc);
+ 
